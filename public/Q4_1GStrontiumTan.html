@@ -150,69 +150,119 @@
 
 let rating = 0;
 let movies = [];
+
 const stars = document.querySelectorAll('.star');
 const movieList = document.getElementById('movieList');
 const addBtn = document.getElementById('addMovieBtn');
 
-// saved movies so it still appears after leaving
-let saved = localStorage.getItem('movies');
-if (saved) {
-    try { movies = JSON.parse(saved); } catch(e){movies = [];}    
+function renderMovies() {
+    movieList.innerHTML = '';
+
     for (let i = 0; i < movies.length; i++) {
         let m = movies[i];
+
         let div = document.createElement('div');
-        let s = '';
-        for (let j = 0; j < m.rating; j++) { s += '★'; }
-        div.textContent = m.title + ' (' + m.year + ') - ' + m.genre + ', Rating: ' + s;
+
+        let starsText = '';
+        for (let j = 0; j < m.rating; j++) {
+            starsText += '★';
+        }
+
+        div.innerHTML =
+            m.title + ' (' + m.year + ') - ' + m.genre +
+            ', Rating: ' + starsText +
+            ' <button onclick="deleteMovie(' + i + ')">Delete</button>';
+
         movieList.appendChild(div);
     }
+
+    localStorage.setItem('movies', JSON.stringify(movies));
+}
+
+
+let saved = localStorage.getItem('movies');
+if (saved) {
+    movies = JSON.parse(saved);
+    renderMovies();
 }
 
 
 for (let i = 0; i < stars.length; i++) {
-    stars[i].classList.add('empty');
-    (function(idx){
-        stars[idx].addEventListener('click', function(){
-            rating = idx + 1;
-            for (let k = 0; k < stars.length; k++){
-                if (k <= idx) {
-                    stars[k].textContent = '★';
-                    stars[k].classList.remove('empty');
-                    stars[k].classList.add('filled');
-                } else {
-                    stars[k].textContent = '☆';
-                    stars[k].classList.remove('filled');
-                    stars[k].classList.add('empty');
-                }
+    stars[i].addEventListener('click', function () {
+
+        rating = i + 1;
+
+        for (let k = 0; k < stars.length; k++) {
+
+            if (k <= i) {
+                stars[k].textContent = '★';
+            } else {
+                stars[k].textContent = '☆';
             }
-        });
-    })(i);
+
+        }
+    });
 }
 
-addBtn.addEventListener('click', function(){
-    let title = document.getElementById('title').value;
+
+addBtn.addEventListener('click', function () {
+
+    let title = document.getElementById('title').value.trim();
     let year = document.getElementById('year').value;
     let genre = document.getElementById('genre').value;
+
     if (!title || !year || rating === 0) {
-        alert('Please fill everything');
+        alert('Please fill everything before adding ❤️');
         return;
     }
-    let movie = {title:title, year:year, genre:genre, rating:rating};
-    movies.push(movie);
-    localStorage.setItem('movies', JSON.stringify(movies));
-    let div = document.createElement('div');
-    let s = '';
-    for (let j = 0; j < rating; j++) { s += '★'; }
-    div.textContent = title + ' (' + year + ') - ' + genre + ', Rating: ' + s;
-    movieList.appendChild(div);
+
+    let found = false;
+
+    for (let i = 0; i < movies.length; i++) {
+
+        if (movies[i].title.toLowerCase() === title.toLowerCase()) {
+
+            movies[i].year = year;
+            movies[i].genre = genre;
+
+            movies[i].rating =
+                Math.round((movies[i].rating + rating) / 2);
+
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        movies.push({
+            title: title,
+            year: year,
+            genre: genre,
+            rating: rating
+        });
+    }
+
+    renderMovies();
+
     document.getElementById('movieForm').reset();
+
     rating = 0;
-    for (let k = 0; k < stars.length; k++){
+
+    for (let k = 0; k < stars.length; k++) {
         stars[k].textContent = '☆';
-        stars[k].classList.remove('filled');
-        stars[k].classList.add('empty');
     }
 });
+
+
+function deleteMovie(index) {
+
+    if (confirm("Are you sure you want to delete?")) {
+
+        movies.splice(index, 1);
+
+        renderMovies();
+    }
+}
 </script>
 
 </body>
